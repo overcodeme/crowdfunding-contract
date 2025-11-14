@@ -5,17 +5,35 @@ import {PriceConverter} from "./PriceConverter.sol";
 
 contract FundMe {
     using PriceConverter for uint256;
+
     uint public MINIMUM_USD = 10;
 
     address[] public funders;
+    address public owner;
+
     mapping (address funder => uint256 amountFunded) public addressToAmountFunded; 
     mapping (address funder => uint256 fundsCount) public addressToFundsCount;
+
+    constructor() {
+        owner = msg.sender;
+    }
 
     function fund() public payable {
         require(msg.value.getConversationRate() >= MINIMUM_USD, "Not enough USD to send");
         funders.push(msg.sender);
         addressToAmountFunded[msg.sender] += msg.value.getConversationRate();
         addressToFundsCount[msg.sender] += 1;
+    }
+
+    function withdraw() public {
+        require(msg.sender == owner, "Must be an owner");
+        for (uint256 funderIndex = 0; funderIndex < funders.length; funderIndex++) {
+            address funder = funders[funderIndex];
+            addressToAmountFunded[funder] = 0;
+        }
+        funders = new address[](0);
+        
+        payable(msg.sender).transfer(address(this).balance);
     }
 
     function getLatestBTCPriceInETH() public view returns (uint256) {
