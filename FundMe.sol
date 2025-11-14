@@ -25,8 +25,7 @@ contract FundMe {
         addressToFundsCount[msg.sender] += 1;
     }
 
-    function withdraw() public {
-        require(msg.sender == owner, "Must be an owner");
+    function withdraw() public onlyOwner {
         for (uint256 funderIndex = 0; funderIndex < funders.length; funderIndex++) {
             address funder = funders[funderIndex];
             addressToAmountFunded[funder] = 0;
@@ -48,5 +47,10 @@ contract FundMe {
 
     function contributionCount(address funder) public view returns (uint256) {
         return addressToFundsCount[funder];
+    }
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Sender is not owner");
+        _;
     }
 }
