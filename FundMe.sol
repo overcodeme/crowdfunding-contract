@@ -3,13 +3,16 @@ pragma solidity ^0.8.18;
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import {PriceConverter} from "./PriceConverter.sol";
 
+error NotOwner();
+error ZeroAddress();
+
 contract FundMe {
     using PriceConverter for uint256;
 
-    uint public MINIMUM_USD = 10;
+    uint public constant MINIMUM_USD = 10e18;
 
     address[] public funders;
-    address public owner;
+    address public immutable owner;
 
     mapping (address funder => uint256 amountFunded) public addressToAmountFunded; 
     mapping (address funder => uint256 fundsCount) public addressToFundsCount;
@@ -21,7 +24,7 @@ contract FundMe {
     function fund() public payable {
         require(msg.value.getConversationRate() >= MINIMUM_USD, "Not enough USD to send");
         funders.push(msg.sender);
-        addressToAmountFunded[msg.sender] += msg.value.getConversationRate();
+        addressToAmountFunded[msg.sender] += msg.value;
         addressToFundsCount[msg.sender] += 1;
     }
 
@@ -50,7 +53,8 @@ contract FundMe {
     }
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "Sender is not owner");
+        if (msg.sender == address(0)) { revert ZeroAddress(); }
+        if (msg.sender != owner) { revert NotOwner(); }
         _;
     }
 }
